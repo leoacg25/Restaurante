@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GastroPOS - Gestión e Impresión de Comandas</title>
+  <!-- Google Fonts: Outfit for UI, Space Mono for Ticket -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+  <!-- CSS Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Login Screen Overlay -->
+  <div id="login-screen" class="login-overlay hidden">
+    <div class="login-box">
+      <div class="login-logo">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="48" height="48">
+          <path d="M2 21h20v-2H2v2zM20 8h-2V5h2v3zm-4 0H4v3c0 3.31 2.69 6 6 6h4c3.31 0 6-2.69 6-6V8h-4zm-2-3H6v3h8V5z"/>
+        </svg>
+        <h1>Gastro<span>POS</span></h1>
+      </div>
+      <p class="login-subtitle">Acceso al Sistema</p>
+      <div id="login-setup" class="login-setup hidden">
+        <label for="login-setup-user">Nombre de usuario</label>
+        <input type="text" id="login-setup-user" placeholder="admin" maxlength="20">
+        <label for="login-setup-password">Contraseña</label>
+        <input type="password" id="login-setup-password" placeholder="Nueva contraseña" maxlength="20">
+        <input type="password" id="login-setup-password-confirm" placeholder="Confirmar contraseña" maxlength="20">
+        <button id="btn-login-setup" class="btn btn-primary" style="width:100%;">Crear Usuario</button>
+      </div>
+      <div id="login-form" class="login-form">
+        <label for="login-user">Usuario</label>
+        <input type="text" id="login-user" placeholder="Nombre de usuario" maxlength="20">
+        <label for="login-password">Contraseña</label>
+        <input type="password" id="login-password" placeholder="Contraseña" maxlength="20">
+        <button id="btn-login" class="btn btn-primary" style="width:100%;">Ingresar</button>
+        <p id="login-error" class="login-error hidden">Usuario o contraseña incorrectos</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main App Container (Hidden during print) -->
+  <div id="app" class="app-container hidden">
+    
+    <!-- Top Header -->
+    <header class="main-header">
+      <div class="logo-area">
+        <div class="logo-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M2 21h20v-2H2v2zM20 8h-2V5h2v3zm-4 0H4v3c0 3.31 2.69 6 6 6h4c3.31 0 6-2.69 6-6V8h-4zm-2-3H6v3h8V5z"/>
+          </svg>
+        </div>
+        <div class="logo-text">
+          <h1>Gastro<span>POS</span></h1>
+          <p>Gestión Gastronómica Inteligente</p>
+        </div>
+      </div>
+      
+      <!-- Tab Navigation -->
+      <nav class="tab-navigation">
+        <button id="btn-tab-pos" class="tab-btn active" data-tab="pos">
+          <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+          Comandas / POS
+        </button>
+        <button id="btn-tab-inventory" class="tab-btn" data-tab="inventory">
+          <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path></svg>
+          Configuración / Inventario
+        </button>
+        <button id="btn-tab-history" class="tab-btn" data-tab="history">
+          <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          Historial / Reportes
+        </button>
+        <button id="btn-tab-settings" class="tab-btn" data-tab="settings">
+          <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+          Configuración General
+        </button>
+      </nav>
+      
+      <!-- System Info / Clock -->
+      <div class="system-meta">
+        <!-- Currency selection & rate -->
+        <div class="exchange-rate-control">
+          <select id="currency-ref-select" class="currency-select" title="Moneda de Referencia">
+            <option value="USD">💵 USD</option>
+            <option value="EUR">💶 EUR</option>
+          </select>
+          <div class="rate-display">
+            <span>Tasa:</span>
+            <input type="number" id="exchange-rate-val" value="36.50" step="0.01" min="0.01" title="Tasa de Cambio en Bs.">
+            <span class="currency-label">Bs.</span>
+            <button type="button" id="btn-refresh-rate" class="btn-icon-small" title="Actualizar tasa automáticamente desde API oficial">
+              <svg class="icon-small" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+            </button>
+          </div>
+        </div>
+        <span id="system-time">--:--:--</span>
+        <span id="user-badge" class="user-badge">--</span>
+        <button id="btn-logout" class="btn-icon-small" title="Cerrar sesión">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content Panels -->
+    <main class="main-content">
+      
+      <!-- Tab 1: POS / Comandas -->
+      <section id="panel-pos" class="tab-panel active">
+        <div class="pos-layout">
+          
+          <!-- POS Left: Interactive Area -->
+          <div class="item-picker-area">
+            
+            <!-- Table Map View (Visible by default) -->
+            <div id="pos-tables-map-view" class="tables-map-view">
+              <div class="tables-map-header">
+                <h2>Distribución de Mesas (Mapa)</h2>
+                <p>Haz clic en una mesa disponible para iniciar comanda, o en una ocupada para agregar productos</p>
+                <div class="table-count-control">
+                  <button type="button" id="btn-remove-table" class="btn-count" title="Quitar mesa">−</button>
+                  <span id="table-count-display">12</span>
+                  <button type="button" id="btn-add-table" class="btn-count" title="Agregar mesa">+</button>
+                </div>
+              </div>
+              <div id="tables-grid" class="tables-grid">
+                <!-- Dynamically populated via JS -->
+              </div>
+            </div>
+
+            <!-- POS Menu View (Hidden by default until table is selected) -->
+            <div id="pos-menu-view" class="pos-menu-view hidden">
+              <div class="search-filter-bar">
+                <button id="btn-back-to-map" class="btn btn-secondary" style="padding: 8px 12px; font-size: 0.85rem; display: flex; align-items: center; gap: 4px; border-color: var(--brand-dark);">
+                  <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                  Mesa: <strong id="pos-menu-active-table">Mesa 1</strong> (Cambiar)
+                </button>
+                <div class="search-box">
+                  <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                  <input type="text" id="pos-search" placeholder="Buscar plato o bebida...">
+                </div>
+                <div class="filter-chips">
+                  <button class="chip active" data-filter="all">Todos</button>
+                  <button class="chip" data-filter="simple">Simples</button>
+                  <button class="chip" data-filter="recipe">Recetas</button>
+                </div>
+                <button id="btn-toggle-saved" class="btn btn-secondary" style="padding: 8px 14px; font-size: 0.85rem; background-color: var(--accent-light); color: var(--accent-hover); border-color: rgba(245,158,11,0.2);">
+                  📋 Espera <span id="saved-orders-count" class="badge" style="padding: 2px 6px; font-size: 0.7rem; margin-left: 4px; background-color: var(--brand-dark); color: #fff;">0</span>
+                </button>
+              </div>
+              
+              <!-- Items Grid Container -->
+              <div id="pos-items-grid" class="items-grid">
+                <!-- Dynamically populated via JS -->
+              </div>
+            </div>
+            
+          </div>
+          
+          <!-- POS Right: Current Order / Ticket Sidebar -->
+          <div class="order-sidebar">
+            <div class="sidebar-header">
+              <h2>Orden Actual</h2>
+              <span id="order-item-count" class="badge">0 ítems</span>
+            </div>
+            
+            <div class="order-details-form">
+              <div class="form-group-inline">
+                <div class="input-field">
+                  <label for="order-table">Mesa / Cliente</label>
+                  <div style="display: flex; gap: 4px;">
+                    <input type="text" id="order-table" placeholder="Selecciona mesa" value="Ninguna" readonly style="background-color: var(--border-color); font-weight: 800; border-color: var(--text-light); text-align: center;">
+                    <button type="button" id="btn-change-table-sidebar" class="btn btn-secondary" style="padding: 6px; display: flex; align-items: center; justify-content: center; border-color: var(--text-light);" title="Cambiar Mesa / Ver Mapa">
+                      <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+                    </button>
+                  </div>
+                </div>
+                <div class="input-field">
+                  <label for="order-waiter">Atiende</label>
+                  <select id="order-waiter" class="waiter-select"></select>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Active Items List -->
+            <div id="order-items-list" class="order-items-list-container">
+              <!-- Dynamically populated via JS -->
+              <div class="empty-order-state">
+                <div class="empty-icon">🍳</div>
+                <p>La orden está vacía</p>
+                <span>Selecciona artículos de la izquierda para comenzar la comanda.</span>
+              </div>
+            </div>
+            
+            <!-- Cost and Print section -->
+            <div class="order-summary-footer">
+              <div class="summary-line">
+                <span>Subtotal</span>
+                <span id="summary-subtotal">$0.00</span>
+              </div>
+              <div class="summary-line highlight">
+                <span>Total a Pagar</span>
+                <span id="summary-total">$0.00</span>
+              </div>
+              
+              <div class="summary-actions-triple">
+                <button id="btn-clear-order" class="btn btn-secondary" title="Vaciar Comanda Actual">
+                  Vaciar
+                </button>
+                <button id="btn-print-order" class="btn btn-secondary" title="Imprimir Comanda y Guardar en Espera" style="background-color: var(--accent-light); color: var(--accent-hover); border-color: rgba(245,158,11,0.2);">
+                  📋 Comanda
+                </button>
+                <button id="btn-pay-order" class="btn btn-primary" title="Totalizar Venta y Cobrar">
+                  💵 Pagar
+                </button>
+              </div>
+            </div>
+          </div>
+          
+        </div>
+      </section>
+
+      <!-- Tab 2: Inventory / Config -->
+      <section id="panel-inventory" class="tab-panel">
+        <div class="inventory-layout">
+          
+          <!-- Config Left: Add/Edit Item Form -->
+          <div class="item-form-container card-panel">
+            <h2 id="form-title">Agregar Nuevo Artículo</h2>
+            
+            <form id="item-editor-form" autocomplete="off">
+              <!-- Hidden input for ID when editing -->
+              <input type="hidden" id="edit-item-id" value="">
+              
+              <!-- Item Type Toggle -->
+              <div class="form-group">
+                <label>Tipo de Artículo</label>
+                <div class="segmented-control">
+                  <input type="radio" name="item-type" id="type-simple" value="simple" checked>
+                  <label for="type-simple">Artículo Simple</label>
+                  
+                  <input type="radio" name="item-type" id="type-recipe" value="recipe">
+                  <label for="type-recipe">Plato Compuesto / Receta</label>
+                </div>
+              </div>
+
+              <!-- Name Input -->
+              <div class="form-group">
+                <label for="item-name">Nombre del Artículo</label>
+                <input type="text" id="item-name" placeholder="Ej. Coca Cola 350ml, Hamburguesa Especial" required>
+              </div>
+
+              <!-- Recipe ingredients section (Visible only for 'recipe' type) -->
+              <div id="recipe-ingredients-section" class="form-group ingredients-selection-card hidden">
+                <div class="section-title-action">
+                  <label>Ingredientes y Cantidades</label>
+                  <span class="info-help">Suma el costo de artículos simples</span>
+                </div>
+                
+                <div class="ingredient-search-box">
+                  <input type="text" id="ingredient-search" placeholder="Buscar artículo ingrediente...">
+                </div>
+
+                <!-- Scrollable list of available simple items -->
+                <div id="ingredients-pool-list" class="ingredients-pool-list">
+                  <!-- Dynamically populated with checkboxes & quantity inputs -->
+                  <div class="empty-pool-message">
+                    Cargando artículos simples...
+                  </div>
+                </div>
+
+                <!-- Live recipe cost output -->
+                <div class="recipe-cost-summary">
+                  Costo de Ingredientes Calculado: <strong id="calculated-recipe-cost">$0.00</strong>
+                </div>
+              </div>
+
+              <!-- Pricing Card (Costo, Utilidad, Precio Venta) -->
+              <div class="pricing-card-row">
+                <!-- Cost Input (Editable for simple, disabled for recipe) -->
+                <div class="form-group">
+                  <label for="item-cost">Costo ($)</label>
+                  <input type="number" id="item-cost" min="0" step="0.01" value="0.00" required>
+                  <small id="cost-help-text" class="help-text">Costo de compra directo.</small>
+                </div>
+
+                <!-- Profit Margin Input -->
+                <div class="form-group">
+                  <label for="item-utility">Utilidad (%)</label>
+                  <input type="number" id="item-utility" min="0" step="0.1" value="40.0" required>
+                  <small class="help-text">Porcentaje de ganancia.</small>
+                </div>
+
+                <!-- Final Sale Price Input -->
+                <div class="form-group highlight-input">
+                  <label for="item-price">Precio de Venta ($)</label>
+                  <input type="number" id="item-price" min="0" step="0.01" value="0.00" required>
+                  <small class="help-text">Costo * (1 + Utilidad/100)</small>
+                </div>
+              </div>
+
+              <!-- Form Actions -->
+              <div class="form-actions">
+                <button type="button" id="btn-cancel-edit" class="btn btn-secondary hidden">Cancelar Edición</button>
+                <button type="submit" id="btn-save-item" class="btn btn-primary">
+                  <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                  Guardar Artículo
+                </button>
+              </div>
+            </form>
+          </div>
+          
+          <!-- Config Right: Articles List -->
+          <div class="items-list-container card-panel">
+            <div class="list-header">
+              <h2>Artículos Registrados</h2>
+              <div class="list-search">
+                <input type="text" id="inventory-search" placeholder="Filtrar artículos...">
+              </div>
+            </div>
+            
+            <div class="table-responsive">
+              <table class="inventory-table">
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Tipo</th>
+                    <th>Costo</th>
+                    <th>Utilidad %</th>
+                    <th>Precio Venta</th>
+                    <th class="actions-col">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="inventory-table-body">
+                  <!-- Dynamically populated via JS -->
+                </tbody>
+              </table>
+              <div id="empty-inventory-state" class="empty-table-state hidden">
+                <div class="empty-icon">📦</div>
+                <p>No hay artículos registrados</p>
+                <span>Usa el formulario de la izquierda para agregar tu primer producto.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      
+      <!-- Tab 3: Historial / Reportes -->
+      <section id="panel-history" class="tab-panel">
+        <div class="history-layout">
+          
+          <!-- Filters -->
+          <div class="history-filters card-panel">
+            <h2>Filtros de Búsqueda</h2>
+            <div class="filter-grid">
+              <div class="form-group">
+                <label for="filter-table">Mesa</label>
+                <select id="filter-table" class="filter-select">
+                  <option value="all">Todas las mesas</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="filter-waiter">Mesero</label>
+                <select id="filter-waiter" class="filter-select">
+                  <option value="all">Todos los meseros</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="filter-date-from">Desde</label>
+                <input type="date" id="filter-date-from">
+              </div>
+              <div class="form-group">
+                <label for="filter-date-to">Hasta</label>
+                <input type="date" id="filter-date-to">
+              </div>
+            </div>
+            <div class="filter-actions">
+              <button id="btn-apply-filters" class="btn btn-primary">Filtrar</button>
+              <button id="btn-clear-filters" class="btn btn-secondary">Limpiar</button>
+              <button id="btn-print-history" class="btn btn-secondary" style="margin-left:auto; background-color:var(--brand-dark); color:#fff; border:none;">
+                🖨️ Imprimir PDF
+              </button>
+            </div>
+          </div>
+          
+          <!-- Sales table -->
+          <div class="history-results card-panel">
+            <div class="history-header">
+              <h2>Historial de Ventas</h2>
+              <span id="history-count" class="badge">0 ventas</span>
+            </div>
+            <div class="table-responsive">
+              <table class="inventory-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Fecha / Hora</th>
+                    <th>Mesa</th>
+                    <th>Mesero</th>
+                    <th>Items</th>
+                    <th>Total</th>
+                    <th>Pago</th>
+                  </tr>
+                </thead>
+                <tbody id="history-table-body">
+                </tbody>
+              </table>
+              <div id="empty-history-state" class="empty-table-state">
+                <div class="empty-icon">📊</div>
+                <p>No hay ventas registradas</p>
+                <span>Las ventas aparecerán aquí al procesar pagos desde el POS.</span>
+              </div>
+            </div>
+            <div class="history-summary-bar">
+              <span>Ventas mostradas: <strong id="history-showing-count">0</strong></span>
+              <span>Total USD: <strong id="history-total-usd">$0.00</strong></span>
+              <span>Total Bs.: <strong id="history-total-bs">0.00 Bs.</strong></span>
+            </div>
+          </div>
+          
+        </div>
+      </section>
+      
+      <!-- Tab 4: Configuración General -->
+      <section id="panel-settings" class="tab-panel">
+        <div class="settings-layout">
+          
+          <!-- User management (admin only) -->
+          <div id="user-mgmt-panel" class="card-panel" style="height:auto; overflow:visible;">
+            <h2>Usuarios del Sistema</h2>
+            <div id="user-list" class="user-list"></div>
+            <div id="user-add-row" class="user-add-row" style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;">
+              <input type="text" id="user-add-username" placeholder="Nuevo usuario" maxlength="20" style="flex:1; min-width:120px; padding:6px 10px; border:1px solid var(--border-color); border-radius:4px; font-size:0.85rem;">
+              <input type="password" id="user-add-password" placeholder="Contraseña" maxlength="20" style="flex:1; min-width:100px; padding:6px 10px; border:1px solid var(--border-color); border-radius:4px; font-size:0.85rem;">
+              <select id="user-add-role" style="padding:6px 10px; border:1px solid var(--border-color); border-radius:4px; font-size:0.85rem; background:var(--bg-secondary);">
+                <option value="user">Usuario</option>
+                <option value="admin">Admin</option>
+              </select>
+              <button id="btn-add-user" class="btn btn-secondary" style="white-space:nowrap;">+ Agregar</button>
+            </div>
+          </div>
+
+          <!-- Waiter management -->
+          <div class="card-panel" style="height:auto; overflow:visible; margin-top:1rem;">
+            <h2>Gestión de Meseros (máx. 5)</h2>
+            <div id="waiter-list" class="waiter-list"></div>
+          </div>
+
+          <!-- Export / Import -->
+          <div id="backup-panel" class="card-panel" style="height:auto; overflow:visible; margin-top:1rem;">
+            <h2>Respaldo de Datos</h2>
+            <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:10px;">
+              Exporta todos los datos a un archivo JSON para migrar o respaldar el sistema.
+            </p>
+            <div style="display:flex; gap:8px;">
+              <button id="btn-export-json" class="btn btn-secondary" style="flex:1;">📤 Exportar JSON</button>
+              <button id="btn-import-json" class="btn btn-secondary" style="flex:1;">📥 Importar JSON</button>
+            </div>
+            <input type="file" id="import-json-input" accept=".json" style="display:none;">
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+    
+    <!-- Footer Status Bar -->
+    <footer class="app-footer">
+      <div>GastroPOS v1.0.0 &copy; 2026. Todos los derechos reservados.</div>
+      <div>Guardado automático: <span id="save-status" class="status-indicator online">Activo</span></div>
+    </footer>
+  </div>
+
+  <!-- Modal: Totalizar Venta -->
+  <div id="payment-modal" class="modal-overlay hidden">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h2>Totalizar Venta / Cobrar</h2>
+        <button id="btn-close-payment-modal" class="btn-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <!-- Display Order totals -->
+        <div class="modal-totals-banner">
+          <div class="modal-total-line">
+            <span>Total en Divisa:</span>
+            <strong id="modal-total-currency">$0.00</strong>
+          </div>
+          <div class="modal-total-line highlight">
+            <span>Total en Bolívares:</span>
+            <strong id="modal-total-bs">0.00 Bs.</strong>
+          </div>
+          <div class="modal-total-line small">
+            <span>Tasa de Cambio:</span>
+            <span id="modal-exchange-rate">1 USD = 36.50 Bs.</span>
+          </div>
+        </div>
+
+        <!-- Payment selector & Dynamic fields -->
+        <div class="modal-payment-form">
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label for="modal-payment-method-select">Método de Pago</label>
+            <select id="modal-payment-method-select" class="payment-select">
+              <option value="efectivo" selected>💵 Efectivo (Bs o Divisa)</option>
+              <option value="transferencia">🏦 Transferencia (Nacional Bs)</option>
+              <option value="mixto">🔄 Pago Mixto (Bs Transf. + Bs Efec.)</option>
+            </select>
+          </div>
+          
+          <!-- Dynamic details inside modal -->
+          <div id="modal-payment-details-dynamic" class="payment-details-container">
+            <!-- Rendered in JS -->
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-cancel-payment" class="btn btn-secondary">Cancelar</button>
+        <button id="btn-confirm-payment" class="btn btn-primary" style="padding: 12px 24px; font-weight: 700;">
+          Confirmar Pago y Facturar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Comandas en Espera -->
+  <div id="saved-orders-modal" class="modal-overlay hidden">
+    <div class="modal-container modal-large">
+      <div class="modal-header">
+        <h2>Comandas en Espera (Transacciones Guardadas)</h2>
+        <button id="btn-close-saved-modal" class="btn-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 15px; text-align: center;">
+          Transacciones impresas que esperan ser cobradas. Selecciónalas para cargarlas al POS.
+        </p>
+        
+        <div class="saved-orders-table-wrapper">
+          <table class="inventory-table">
+            <thead>
+              <tr>
+                <th>Identificador / Mesa</th>
+                <th>Fecha / Hora</th>
+                <th>Atiende</th>
+                <th>Cant. Ítems</th>
+                <th>Total Neto</th>
+                <th style="text-align: right;">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="saved-orders-modal-list">
+              <!-- Dynamically populated in JS -->
+            </tbody>
+          </table>
+          <div id="empty-saved-orders-state" class="empty-table-state hidden">
+            <div class="empty-icon">📋</div>
+            <p>No hay comandas en espera</p>
+            <span>Al hacer clic en "Comanda" en el POS, las órdenes aparecerán aquí.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ticket Print Layout (Visible ONLY during document print) -->
+  <div id="ticket-print-layout" class="ticket-print">
+    <!-- Generado dinámicamente al imprimir -->
+  </div>
+
+  <!-- Firebase SDK (Realtime Database) -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+  <!-- App Main Scripts -->
+  <script src="app.js"></script>
+</body>
+</html>
